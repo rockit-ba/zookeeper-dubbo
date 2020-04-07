@@ -1,5 +1,6 @@
 package com.pjx;
 
+import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,6 +32,19 @@ public class Application {
             String sonVal = zkClient.readData(sonPath);
             list.add(sonVal);
         }
+        //如果监听到节点变化就刷新服务列表重新拉取
+        zkClient.subscribeChildChanges(rootNode, (parentPath,childrensList) ->{
+
+            list.clear();
+            for (String children : childrensList) {
+                //得到子节点全路径
+                String sonPath = rootNode+"/"+children;
+                //获取对应的val也就是对应服务的ip
+                String sonVal = zkClient.readData(sonPath);
+                list.add(sonVal);
+            }
+
+        });
 
         return list;
     }

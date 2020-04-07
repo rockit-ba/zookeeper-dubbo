@@ -19,30 +19,27 @@ public class ConsumerController {
     @Autowired
     private List<String> serversList;
 
-    private AtomicInteger init = new AtomicInteger(1);
-
+    private AtomicInteger init = new AtomicInteger(0);
 
     @GetMapping("/name")
     public String getName() throws Exception{
 
         //第一次是1(使用httpclient来请求)
-        String s = serversList.get(init.get() - 1);
+        String s = serversList.get(init.get());
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         HttpGet httpGet = new HttpGet("http://"+s+"/name");
         CloseableHttpResponse response = httpClient.execute(httpGet);
         HttpEntity entity = response.getEntity();
-
-        //示例使用轮训的方式，取模的数量是负载方的服务数
-        //首次访问init=1，取模不等于0，把他设置为2，然后返回结果
-        if(init.get() % 2 != 0){
-            init.incrementAndGet();
+        if(serversList.size() == 1){
             return EntityUtils.toString(entity);
-
         }
-        //第二次init=2，取模=0，把init重置为1，然后返回
-        if(init.get() % 2 == 0){
-            init.set(1);
+        //第一次是0，size=2
+        if(init.get() < serversList.size()-1){
+            init.getAndIncrement();
+            return EntityUtils.toString(entity);
         }
+        //如果init不小于serversList.size()-1，重置为0
+        init.set(0);
 
         return EntityUtils.toString(entity);
 
